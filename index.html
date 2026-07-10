@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>인생영화 기반 추천기</title>
+  <title>3 in 3 - 인생영화 추천기</title>
   <style>
     :root {
       color-scheme: light;
@@ -75,6 +75,12 @@
       font-weight: 900;
       letter-spacing: 0;
       box-shadow: inset 0 -8px 0 rgba(255, 255, 255, 0.08);
+    }
+
+    .mark svg {
+      width: 29px;
+      height: 29px;
+      display: block;
     }
 
     h1,
@@ -270,7 +276,7 @@
     .cinema-strip h2 {
       max-width: 800px;
       position: relative;
-      font-size: clamp(40px, 4vw, 56px);
+      font-size: clamp(36px, 3.6vw, 50px);
       line-height: 1.06;
       font-weight: 900;
     }
@@ -414,8 +420,8 @@
     .poster b {
       position: relative;
       margin-top: 4px;
-      font-size: 26px;
-      line-height: 1;
+      font-size: 17px;
+      line-height: 1.15;
     }
 
     .movie-body {
@@ -426,7 +432,7 @@
     }
 
     .movie-title {
-      font-size: 20px;
+      font-size: 23px;
       font-weight: 900;
       line-height: 1.2;
     }
@@ -583,9 +589,16 @@
   <div class="shell">
     <aside class="control-panel">
       <div class="brand">
-        <div class="mark">3F</div>
+        <div class="mark" aria-label="3 in 3 - 인생영화 추천기">
+          <svg viewBox="0 0 32 32" role="img" aria-hidden="true">
+            <path d="M6 12h20v13H6z" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"/>
+            <path d="M6 12l3-6h20l-3 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"/>
+            <path d="M12 6l-3 6M19 6l-3 6M26 6l-3 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>
+            <path d="M11 18h10M11 22h7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>
+          </svg>
+        </div>
         <div>
-          <h1>인생영화 추천기</h1>
+          <h1>3 in 3 - 인생영화 추천기</h1>
           <p class="tagline">세 편의 취향을 읽고 다음 세 편을 고릅니다.</p>
         </div>
       </div>
@@ -1053,14 +1066,15 @@
     }
 
     function findAutocompleteMatches(value) {
-      const query = normalizeTitle(value);
+      const query = normalizeSearchQuery(value);
       if (query.length < 1) return [];
       return autocompleteMovies
         .map((movieItem) => {
           const title = normalizeTitle(movieItem.title);
           const englishTitle = normalizeTitle(movieItem.englishTitle || "");
-          const starts = title.startsWith(query) || englishTitle.startsWith(query);
-          const includes = title.includes(query) || englishTitle.includes(query);
+          const koreanInitials = getKoreanInitials(movieItem.title);
+          const starts = title.startsWith(query) || englishTitle.startsWith(query) || koreanInitials.startsWith(query);
+          const includes = title.includes(query) || englishTitle.includes(query) || koreanInitials.includes(query);
           if (!includes) return null;
           const score = (starts ? 3 : 1) + (isRecentMovie(movieItem) ? 0.5 : 0);
           return { movieItem, score };
@@ -1138,6 +1152,22 @@
       return value.toLowerCase().replace(/[^0-9a-z가-힣]/g, "");
     }
 
+    function normalizeSearchQuery(value) {
+      return value.toLowerCase().replace(/[^0-9a-z가-힣ㄱ-ㅎ]/g, "");
+    }
+
+    function getKoreanInitials(value) {
+      const initials = [
+        "ㄱ", "ㄲ", "ㄴ", "ㄷ", "ㄸ", "ㄹ", "ㅁ", "ㅂ", "ㅃ", "ㅅ",
+        "ㅆ", "ㅇ", "ㅈ", "ㅉ", "ㅊ", "ㅋ", "ㅌ", "ㅍ", "ㅎ"
+      ];
+      return String(value || "").split("").map((character) => {
+        const code = character.charCodeAt(0);
+        if (code < 0xac00 || code > 0xd7a3) return "";
+        return initials[Math.floor((code - 0xac00) / 588)];
+      }).join("");
+    }
+
     function buildTasteProfile(inputs) {
       const seen = new Set(inputs.map(normalizeTitle));
       const weights = {};
@@ -1176,11 +1206,16 @@
     }
 
     function findKnownMovie(input) {
-      const normalizedInput = normalizeTitle(input);
+      const normalizedInput = normalizeSearchQuery(input);
       return searchableMovies.find((candidate) => {
         const ko = normalizeTitle(candidate.title);
         const en = normalizeTitle(candidate.englishTitle);
-        return ko === normalizedInput || en === normalizedInput || ko.includes(normalizedInput) || en.includes(normalizedInput);
+        const koInitials = getKoreanInitials(candidate.title);
+        return ko === normalizedInput
+          || en === normalizedInput
+          || ko.includes(normalizedInput)
+          || en.includes(normalizedInput)
+          || koInitials.includes(normalizedInput);
       });
     }
 
@@ -1374,13 +1409,17 @@
         <div class="poster ${image ? "has-image" : ""}" style="--poster-bg: ${palette}">
           ${image}
           <span>${movieItem.year}</span>
-          <b>${movieItem.title}</b>
+          <b>${renderEnglishTitle(movieItem)}</b>
         </div>
       `;
     }
 
     function renderMeta(movieItem) {
       return `${movieItem.year}`;
+    }
+
+    function renderEnglishTitle(movieItem) {
+      return movieItem.englishTitle || movieItem.title;
     }
 
     function isHiddenMovieNote(note) {
