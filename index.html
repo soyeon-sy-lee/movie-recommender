@@ -291,13 +291,9 @@
 
     .eyebrow {
       color: var(--accent);
-      font-size: 13px;
+      font-size: 20px;
+      line-height: 1.2;
       font-weight: 900;
-    }
-
-    .result-title {
-      margin-top: 4px;
-      font-size: clamp(24px, 3vw, 34px);
     }
 
     .set-count {
@@ -343,7 +339,7 @@
       background: var(--panel);
       overflow: hidden;
       display: grid;
-      grid-template-rows: 142px 1fr;
+      grid-template-rows: 220px 1fr;
       box-shadow: 0 12px 36px rgba(63, 44, 33, 0.08);
       transition: transform 170ms ease, box-shadow 170ms ease;
     }
@@ -363,6 +359,19 @@
       background: var(--poster-bg);
     }
 
+    .poster.has-image {
+      background: #221f1d;
+    }
+
+    .poster img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transform: scale(1.01);
+    }
+
     .poster::before {
       content: "";
       position: absolute;
@@ -374,6 +383,13 @@
         linear-gradient(180deg, transparent, rgba(0, 0, 0, 0.12));
     }
 
+    .poster.has-image::before {
+      inset: 0;
+      border: 0;
+      border-radius: 0;
+      background: linear-gradient(180deg, rgba(0, 0, 0, 0.05) 38%, rgba(0, 0, 0, 0.76));
+    }
+
     .poster::after {
       content: "";
       position: absolute;
@@ -382,6 +398,10 @@
       width: 8px;
       height: 74px;
       background: repeating-linear-gradient(180deg, rgba(255, 255, 255, 0.55) 0 8px, transparent 8px 16px);
+    }
+
+    .poster.has-image::after {
+      display: none;
     }
 
     .poster span {
@@ -614,7 +634,6 @@
       <section class="result-head">
         <div>
           <p class="eyebrow">추천 결과</p>
-          <h2 class="result-title" id="resultTitle">세 편의 영화를 입력해 주세요</h2>
         </div>
         <p class="set-count" id="setCount"></p>
       </section>
@@ -705,6 +724,33 @@
       movie("이터널스", "Eternals", 2021, ["superhero", "family", "grand", "myth", "visual"], "신화적 스케일로 영웅의 존재 이유를 묻는 영화"),
       movie("듄", "Dune", 2021, ["sci-fi", "political", "destiny", "grand", "visual"], "사막의 신화와 권력의 서사를 거대한 이미지로 펼치는 영화")
     ];
+
+    const knownMovieImageIds = {
+      "oldboy-2003": "tt0364569",
+      "walle-2008": "tt0910970",
+      "soul-2020": "tt2948372",
+      "thelivesofothers-2006": "tt0405094",
+      "spiritedaway-2001": "tt0245429",
+      "yourname-2016": "tt5311514",
+      "chungkingexpress-1994": "tt0109424",
+      "inthemoodforlove-2000": "tt0118694",
+      "harrypotterandthesorcerersstone-2001": "tt0241527",
+      "nomadland-2020": "tt9770150",
+      "babylon-2022": "tt10640346",
+      "topgunmaverick-2022": "tt1745960",
+      "spidermanintothespiderverse-2018": "tt4633694",
+      "princessmononoke-1997": "tt0119698",
+      "howlsmovingcastle-2004": "tt0347149",
+      "1917-2019": "tt8579674",
+      "memoriesofmurder-2003": "tt0353969",
+      "mother-2009": "tt1216496",
+      "burning-2018": "tt7282468",
+      "mysassygirl-2001": "tt0293715",
+      "christmasinaugust-1998": "tt0140825",
+      "onefinespringday-2001": "tt0295192",
+      "theclassic-2003": "tt0348568",
+      "500daysofsummer-2009": "tt1022603"
+    };
 
     const curatedRecommendationPool = [
       movie("애프터 양", "After Yang", 2021, ["sci-fi", "family", "memory", "quiet", "melancholy"], "조용한 SF 안에서 기억과 가족의 빈자리를 바라봅니다."),
@@ -800,7 +846,11 @@
 
     const RECENT_YEAR_CUTOFF = 2010;
     const RECENT_TO_OLD_RATIO = 10;
-    const recommendationPool = mergeMoviePools(curatedRecommendationPool, window.MOVIE_DATASET || []);
+    const datasetMovies = window.MOVIE_DATASET || [];
+    applyKnownMovieImages(knownMovies, knownMovieImageIds);
+    applyMovieImages(datasetMovies);
+    const recommendationPool = mergeMoviePools(curatedRecommendationPool, datasetMovies);
+    applyMovieImages(recommendationPool);
     const displayRecommendationPool = createEraBalancedDisplayPool(recommendationPool.filter(hasKoreanDisplayTitle));
     const searchableMovies = mergeMoviePools(knownMovies, recommendationPool);
     document.querySelector("#datasetCount").textContent = `${displayRecommendationPool.length.toLocaleString("ko-KR")}개`;
@@ -860,7 +910,6 @@
     const form = document.querySelector("#movieForm");
     const actions = document.querySelector("#actions");
     const rerollButton = document.querySelector("#rerollButton");
-    const resultTitle = document.querySelector("#resultTitle");
     const setCount = document.querySelector("#setCount");
     const tasteBox = document.querySelector("#tasteBox");
     const recommendations = document.querySelector("#recommendations");
@@ -888,17 +937,55 @@
       return { title, englishTitle, year, tags, note };
     }
 
+    function applyKnownMovieImages(movies, imageIds) {
+      movies.forEach((movieItem) => {
+        const key = movieKey(movieItem);
+        const imdbId = imageIds[key];
+        if (imdbId && !movieItem.id) movieItem.id = imdbId;
+      });
+      applyMovieImages(movies);
+    }
+
+    function applyMovieImages(movies) {
+      movies.forEach((movieItem) => {
+        movieItem.imageUrl = movieItem.imageUrl || buildPosterUrl(movieItem);
+      });
+    }
+
     function mergeMoviePools(...pools) {
       const seen = new Set();
+      const byKey = new Map();
       const merged = [];
       pools.flat().forEach((movieItem) => {
         const key = `${normalizeTitle(movieItem.englishTitle || movieItem.title)}-${movieItem.year || ""}`;
         if (!seen.has(key)) {
           seen.add(key);
+          byKey.set(key, movieItem);
           merged.push(movieItem);
+        } else {
+          enrichMovieImage(byKey.get(key), movieItem);
         }
       });
       return merged;
+    }
+
+    function enrichMovieImage(target, source) {
+      if (!target || !source) return;
+      if (!target.id && source.id) target.id = source.id;
+      if (!target.imdbId && source.imdbId) target.imdbId = source.imdbId;
+      if (!target.imageUrl && source.imageUrl) target.imageUrl = source.imageUrl;
+      if (!target.posterUrl && source.posterUrl) target.posterUrl = source.posterUrl;
+      target.imageUrl = target.imageUrl || buildPosterUrl(target);
+    }
+
+    function buildPosterUrl(movieItem) {
+      const imdbId = movieItem.imdbId || movieItem.id;
+      if (!imdbId || !/^tt\d+$/.test(imdbId)) return "";
+      return `https://images.metahub.space/poster/medium/${imdbId}/img`;
+    }
+
+    function getMovieImageUrl(movieItem) {
+      return movieItem.imageUrl || movieItem.posterUrl || buildPosterUrl(movieItem);
     }
 
     function hasKoreanDisplayTitle(movieItem) {
@@ -1210,7 +1297,6 @@
 
     function render() {
       const start = currentSet * 3;
-      resultTitle.textContent = `${currentSet + 1}번째 추천 세트`;
       setCount.textContent = `${currentSet + 1} / 3`;
       actions.classList.add("has-results");
       rerollButton.classList.remove("is-hidden");
@@ -1223,7 +1309,7 @@
       const tags = latestProfile.topTags.map((tag) => tagKorean[tag] || tag);
       const matched = latestProfile.matchedTitles.length ? `${latestProfile.matchedTitles.join(", ")}에서` : "입력한 세 편에서";
       const unknown = latestProfile.unmatchedInputs.length ? ` 일부 제목은 단어 분위기를 중심으로 참고했습니다.` : "";
-      const learned = Object.keys(learningState.votes).length ? ` 지금까지의 붐업/붐다운 평가도 추천 점수에 반영하고 있습니다.` : "";
+      const learned = Object.keys(learningState.votes).length ? ` 지금까지의 평가도 추천 점수에 반영하고 있습니다.` : "";
       tasteBox.classList.add("is-visible");
       tasteBox.innerHTML = `
         <strong>당신의 영화 취향</strong>
@@ -1241,16 +1327,15 @@
           .filter((tag) => latestProfile.topTags.includes(tag))
           .slice(0, 3)
           .map((tag) => tagKorean[tag] || tag);
-        const reason = matchingTags.length
-          ? `${matchingTags.join(", ")} 취향과 맞닿아 있습니다. ${movieItem.note}`
-          : movieItem.note;
+        const note = isHiddenMovieNote(movieItem.note) ? "" : movieItem.note;
+        const reason = [
+          matchingTags.length ? `${matchingTags.join(", ")} 취향과 맞닿아 있습니다.` : "",
+          note
+        ].filter(Boolean).join(" ");
 
         return `
           <article class="movie-card">
-            <div class="poster" style="--poster-bg: ${palette}">
-              <span>${movieItem.year}</span>
-              <b>${movieItem.title}</b>
-            </div>
+            ${renderPoster(movieItem, palette)}
             <div class="movie-body">
               <div>
                 <div class="movie-title">${movieItem.title}</div>
@@ -1279,8 +1364,38 @@
       });
     }
 
+    function renderPoster(movieItem, palette) {
+      const imageUrl = getMovieImageUrl(movieItem);
+      const image = imageUrl
+        ? `<img src="${escapeAttribute(imageUrl)}" alt="${escapeAttribute(`${movieItem.title} 이미지`)}" loading="lazy" onerror="this.closest('.poster').classList.remove('has-image'); this.remove();">`
+        : "";
+
+      return `
+        <div class="poster ${image ? "has-image" : ""}" style="--poster-bg: ${palette}">
+          ${image}
+          <span>${movieItem.year}</span>
+          <b>${movieItem.title}</b>
+        </div>
+      `;
+    }
+
     function renderMeta(movieItem) {
       return `${movieItem.year}`;
+    }
+
+    function isHiddenMovieNote(note) {
+      const text = String(note || "");
+      return text.includes("MovieLens 공개 데이터셋")
+        && text.includes("사용자 태그")
+        && text.includes("추천 후보");
+    }
+
+    function escapeAttribute(value) {
+      return String(value)
+        .replace(/&/g, "&amp;")
+        .replace(/"/g, "&quot;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
     }
   </script>
 </body>

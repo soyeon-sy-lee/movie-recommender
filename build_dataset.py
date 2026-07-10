@@ -305,7 +305,7 @@ def main():
                     "englishTitle": title,
                     "year": year or "",
                     "tags": tags,
-                    "note": "MovieLens 공개 데이터셋의 장르와 사용자 태그를 바탕으로 추천 후보에 포함했습니다.",
+                    "note": "",
                 })
 
     ko_movies = [movie for movie in movies if movie["title"] != movie["englishTitle"]]
