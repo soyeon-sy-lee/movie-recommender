@@ -616,7 +616,7 @@
           <p class="eyebrow">추천 결과</p>
           <h2 class="result-title" id="resultTitle">세 편의 영화를 입력해 주세요</h2>
         </div>
-        <p class="set-count" id="setCount">최대 3세트</p>
+        <p class="set-count" id="setCount"></p>
       </section>
 
       <section class="taste-box" id="tasteBox">
@@ -1222,7 +1222,7 @@
     function renderTaste() {
       const tags = latestProfile.topTags.map((tag) => tagKorean[tag] || tag);
       const matched = latestProfile.matchedTitles.length ? `${latestProfile.matchedTitles.join(", ")}에서` : "입력한 세 편에서";
-      const unknown = latestProfile.unmatchedInputs.length ? ` 일부 제목은 데이터셋에 없어 단어 분위기만 참고했습니다.` : "";
+      const unknown = latestProfile.unmatchedInputs.length ? ` 일부 제목은 단어 분위기를 중심으로 참고했습니다.` : "";
       const learned = Object.keys(learningState.votes).length ? ` 지금까지의 붐업/붐다운 평가도 추천 점수에 반영하고 있습니다.` : "";
       tasteBox.classList.add("is-visible");
       tasteBox.innerHTML = `
