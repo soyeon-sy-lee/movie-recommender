@@ -1,0 +1,1248 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>인생영화 기반 추천기</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #172026;
+      --muted: #65717b;
+      --page: #f5efe7;
+      --panel: #fffdf8;
+      --panel-soft: #eee4d8;
+      --line: #ddd2c5;
+      --accent: #b9413b;
+      --accent-deep: #7e2f3b;
+      --accent-ink: #fff8ed;
+      --mint: #24766c;
+      --violet: #51456f;
+      --amber: #c38b30;
+      --shadow: 0 18px 52px rgba(61, 41, 31, 0.14);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Apple SD Gothic Neo", sans-serif;
+      background:
+        linear-gradient(90deg, rgba(23, 32, 38, 0.04) 1px, transparent 1px),
+        var(--page);
+      background-size: 28px 28px;
+      color: var(--ink);
+      line-height: 1.55;
+    }
+
+    button,
+    input {
+      font: inherit;
+    }
+
+    button {
+      border: 0;
+      cursor: pointer;
+    }
+
+    .shell {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: minmax(320px, 430px) minmax(0, 1fr);
+    }
+
+    .control-panel {
+      padding: 34px 28px;
+      background: var(--panel);
+      border-right: 1px solid var(--line);
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow-y: auto;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 30px;
+    }
+
+    .mark {
+      width: 46px;
+      height: 46px;
+      display: grid;
+      place-items: center;
+      border-radius: 8px;
+      background: var(--ink);
+      color: #fff7e5;
+      font-weight: 900;
+      letter-spacing: 0;
+      box-shadow: inset 0 -8px 0 rgba(255, 255, 255, 0.08);
+    }
+
+    h1,
+    h2,
+    p {
+      margin: 0;
+      letter-spacing: 0;
+    }
+
+    h1 {
+      font-size: 24px;
+      line-height: 1.18;
+    }
+
+    .tagline {
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .form {
+      display: grid;
+      gap: 14px;
+    }
+
+    label {
+      display: grid;
+      gap: 7px;
+      color: #3d454c;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .autocomplete {
+      position: relative;
+    }
+
+    input {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      color: var(--ink);
+      padding: 14px 15px;
+      outline: none;
+      transition: border-color 160ms ease, box-shadow 160ms ease;
+    }
+
+    input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 4px rgba(185, 65, 59, 0.14);
+    }
+
+    .suggestions {
+      position: absolute;
+      z-index: 20;
+      top: calc(100% + 6px);
+      left: 0;
+      right: 0;
+      display: none;
+      max-height: 260px;
+      overflow-y: auto;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fffdf8;
+      box-shadow: 0 18px 44px rgba(61, 41, 31, 0.18);
+    }
+
+    .suggestions.open {
+      display: block;
+    }
+
+    .suggestion-item {
+      width: 100%;
+      min-height: 48px;
+      padding: 9px 12px;
+      border-bottom: 1px solid #eee3d5;
+      background: transparent;
+      color: var(--ink);
+      text-align: left;
+      display: grid;
+      gap: 2px;
+    }
+
+    .suggestion-item:hover,
+    .suggestion-item.active {
+      background: #fff2df;
+    }
+
+    .suggestion-item strong {
+      font-size: 14px;
+    }
+
+    .suggestion-item span {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .actions {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+      margin-top: 4px;
+    }
+
+    .primary,
+    .secondary {
+      min-height: 48px;
+      border-radius: 8px;
+      padding: 0 16px;
+      font-weight: 800;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      white-space: nowrap;
+    }
+
+    .primary {
+      background: var(--accent);
+      color: var(--accent-ink);
+    }
+
+    .secondary {
+      background: var(--panel-soft);
+      color: #453a31;
+    }
+
+    .secondary:disabled {
+      opacity: 0.48;
+      cursor: not-allowed;
+    }
+
+    .helper {
+      margin-top: 18px;
+      padding: 13px 14px;
+      border: 1px solid #eadbb8;
+      border-radius: 8px;
+      background: #fff7df;
+      color: #5d4a1b;
+      font-size: 13px;
+    }
+
+    .workspace {
+      padding: 34px;
+      display: grid;
+      gap: 22px;
+      align-content: start;
+    }
+
+    .cinema-strip {
+      min-height: 196px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background:
+        linear-gradient(90deg, rgba(255, 255, 255, 0.18) 8px, transparent 8px 34px, rgba(255, 255, 255, 0.18) 34px 42px),
+        linear-gradient(135deg, #1f272e, #5f3e3b 48%, #ba8545);
+      background-size: 42px 100%, 100% 100%;
+      color: #fff8e9;
+      padding: 28px;
+      display: grid;
+      align-content: end;
+      overflow: hidden;
+      position: relative;
+      box-shadow: var(--shadow);
+    }
+
+    .cinema-strip::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(90deg, rgba(0, 0, 0, 0.18), transparent 48%);
+      pointer-events: none;
+    }
+
+    .cinema-strip::after {
+      content: "";
+      position: absolute;
+      inset: auto 0 0;
+      height: 12px;
+      background: repeating-linear-gradient(90deg, rgba(255, 248, 233, 0.58) 0 12px, transparent 12px 24px);
+    }
+
+    .cinema-strip h2 {
+      max-width: 780px;
+      position: relative;
+      font-size: clamp(28px, 5vw, 58px);
+      line-height: 1.03;
+      font-weight: 900;
+    }
+
+    .cinema-strip p {
+      max-width: 720px;
+      margin-top: 12px;
+      position: relative;
+      color: rgba(255, 248, 233, 0.82);
+    }
+
+    .result-head {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 18px;
+    }
+
+    .eyebrow {
+      color: var(--accent);
+      font-size: 13px;
+      font-weight: 900;
+    }
+
+    .result-title {
+      margin-top: 4px;
+      font-size: clamp(24px, 3vw, 34px);
+    }
+
+    .set-count {
+      color: var(--muted);
+      font-size: 14px;
+      white-space: nowrap;
+    }
+
+    .taste-box {
+      border-left: 5px solid var(--mint);
+      background: rgba(255, 253, 248, 0.88);
+      padding: 17px 18px;
+      border-radius: 0 8px 8px 0;
+      box-shadow: 0 8px 28px rgba(63, 44, 33, 0.07);
+    }
+
+    .taste-box strong {
+      display: block;
+      margin-bottom: 4px;
+      color: var(--ink);
+    }
+
+    .recommendations {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .movie-card {
+      min-height: 320px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+      overflow: hidden;
+      display: grid;
+      grid-template-rows: 142px 1fr;
+      box-shadow: 0 12px 36px rgba(63, 44, 33, 0.08);
+      transition: transform 170ms ease, box-shadow 170ms ease;
+    }
+
+    .movie-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 20px 48px rgba(63, 44, 33, 0.13);
+    }
+
+    .poster {
+      padding: 18px;
+      display: grid;
+      align-content: end;
+      color: white;
+      position: relative;
+      overflow: hidden;
+      background: var(--poster-bg);
+    }
+
+    .poster::before {
+      content: "";
+      position: absolute;
+      inset: 14px;
+      border: 1px solid rgba(255, 255, 255, 0.36);
+      border-radius: 6px;
+      background:
+        linear-gradient(135deg, rgba(255, 255, 255, 0.1), transparent 42%),
+        linear-gradient(180deg, transparent, rgba(0, 0, 0, 0.12));
+    }
+
+    .poster::after {
+      content: "";
+      position: absolute;
+      right: 18px;
+      top: 18px;
+      width: 8px;
+      height: 74px;
+      background: repeating-linear-gradient(180deg, rgba(255, 255, 255, 0.55) 0 8px, transparent 8px 16px);
+    }
+
+    .poster span {
+      position: relative;
+      font-size: 12px;
+      font-weight: 900;
+      opacity: 0.86;
+    }
+
+    .poster b {
+      position: relative;
+      margin-top: 4px;
+      font-size: 26px;
+      line-height: 1;
+    }
+
+    .movie-body {
+      padding: 18px;
+      display: grid;
+      gap: 12px;
+      align-content: start;
+    }
+
+    .movie-title {
+      font-size: 20px;
+      font-weight: 900;
+      line-height: 1.2;
+    }
+
+    .meta {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .score-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      color: var(--mint);
+      font-size: 13px;
+      font-weight: 900;
+    }
+
+    .score-meter {
+      flex: 1;
+      height: 7px;
+      border-radius: 999px;
+      background: #eadfce;
+      overflow: hidden;
+    }
+
+    .score-fill {
+      display: block;
+      width: var(--score-width);
+      height: 100%;
+      background: linear-gradient(90deg, var(--mint), var(--amber));
+    }
+
+    .reason {
+      color: #3d4550;
+      font-size: 14px;
+    }
+
+    .card-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1.2fr;
+      gap: 7px;
+      margin-top: 2px;
+    }
+
+    .card-action {
+      min-height: 36px;
+      border: 1px solid #e1d6c7;
+      border-radius: 8px;
+      background: #fff9ef;
+      color: #4a4037;
+      font-size: 18px;
+      font-weight: 900;
+    }
+
+    .card-action:hover,
+    .card-action.active {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: #fff1e7;
+    }
+
+    .card-action.seen {
+      background: #eee4d8;
+    }
+
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .chip {
+      border: 1px solid #e3d9ca;
+      border-radius: 999px;
+      padding: 4px 8px;
+      background: #fffaf1;
+      color: #5d5145;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .empty {
+      border: 1px dashed #c7bbaa;
+      border-radius: 8px;
+      padding: 32px;
+      color: var(--muted);
+      background: rgba(255, 253, 248, 0.64);
+    }
+
+    @media (max-width: 1040px) {
+      .shell {
+        grid-template-columns: 1fr;
+      }
+
+      .control-panel {
+        position: static;
+        height: auto;
+        border-right: 0;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .recommendations {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 620px) {
+      .control-panel,
+      .workspace {
+        padding: 22px 16px;
+      }
+
+      .actions,
+      .result-head {
+        grid-template-columns: 1fr;
+        display: grid;
+        align-items: stretch;
+      }
+
+      .set-count {
+        white-space: normal;
+      }
+
+      .cinema-strip {
+        min-height: 230px;
+        padding: 22px;
+      }
+
+      .card-actions {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <aside class="control-panel">
+      <div class="brand">
+        <div class="mark">3F</div>
+        <div>
+          <h1>인생영화 추천기</h1>
+          <p class="tagline">세 편의 취향을 읽고 다음 세 편을 고릅니다.</p>
+        </div>
+      </div>
+
+      <form class="form" id="movieForm">
+        <label>
+          인생영화 1
+          <span class="autocomplete">
+            <input id="movieOne" name="movieOne" placeholder="예: 이터널 선샤인" autocomplete="off" required>
+            <span class="suggestions" id="movieOneSuggestions"></span>
+          </span>
+        </label>
+        <label>
+          인생영화 2
+          <span class="autocomplete">
+            <input id="movieTwo" name="movieTwo" placeholder="예: 라라랜드" autocomplete="off" required>
+            <span class="suggestions" id="movieTwoSuggestions"></span>
+          </span>
+        </label>
+        <label>
+          인생영화 3
+          <span class="autocomplete">
+            <input id="movieThree" name="movieThree" placeholder="예: 그녀" autocomplete="off" required>
+            <span class="suggestions" id="movieThreeSuggestions"></span>
+          </span>
+        </label>
+
+        <div class="actions">
+          <button class="primary" type="submit">추천 받기</button>
+          <button class="secondary" id="rerollButton" type="button" disabled>다른 추천</button>
+        </div>
+      </form>
+
+      <p class="helper">
+        국내외 유명작과 MovieLens 공개 데이터셋을 함께 사용합니다.
+        현재 추천 후보는 <strong id="datasetCount">9,000개 이상</strong>입니다.
+      </p>
+    </aside>
+
+    <main class="workspace">
+      <section class="cinema-strip" aria-label="서비스 소개">
+        <h2>좋아한 영화 세 편이면, 취향의 윤곽은 꽤 선명해집니다.</h2>
+        <p>장르보다 더 깊은 단서인 정서, 리듬, 결말의 온도, 인물의 고독을 함께 봅니다.</p>
+      </section>
+
+      <section class="result-head">
+        <div>
+          <p class="eyebrow">RECOMMENDATION</p>
+          <h2 class="result-title" id="resultTitle">아직 추천 전입니다</h2>
+        </div>
+        <p class="set-count" id="setCount">총 3세트까지 확인 가능</p>
+      </section>
+
+      <section class="taste-box" id="tasteBox">
+        <strong>취향 해석</strong>
+        <p>왼쪽에 인생영화 3편을 입력하면, 추천 이유와 함께 짧은 취향 해석이 표시됩니다.</p>
+      </section>
+
+      <section class="recommendations" id="recommendations">
+        <div class="empty">추천 결과가 이곳에 나타납니다.</div>
+      </section>
+    </main>
+  </div>
+
+  <script src="movies_dataset.js"></script>
+  <script>
+    const knownMovies = [
+      movie("이터널 선샤인", "Eternal Sunshine of the Spotless Mind", 2004, ["romance", "memory", "melancholy", "surreal", "intimate"], "기억과 사랑의 잔상을 따라가는 영화"),
+      movie("라라랜드", "La La Land", 2016, ["romance", "music", "dream", "bittersweet", "stylish"], "꿈과 사랑이 서로 다른 방향으로 빛나는 뮤지컬"),
+      movie("그녀", "Her", 2013, ["romance", "loneliness", "future", "intimate", "philosophical"], "외로움과 연결 욕구를 섬세하게 바라보는 SF 로맨스"),
+      movie("인셉션", "Inception", 2010, ["sci-fi", "mind", "puzzle", "action", "stylish"], "꿈의 구조를 액션 퍼즐로 설계한 영화"),
+      movie("인터스텔라", "Interstellar", 2014, ["sci-fi", "space", "family", "grand", "emotional"], "우주적 스케일 안에 가족의 감정을 둔 SF"),
+      movie("기생충", "Parasite", 2019, ["satire", "thriller", "class", "dark", "precise"], "계급의 긴장을 장르적으로 폭발시키는 블랙코미디"),
+      movie("올드보이", "Oldboy", 2003, ["revenge", "thriller", "dark", "stylish", "tragic"], "복수와 비극을 강렬한 형식으로 밀어붙이는 영화"),
+      movie("매드맥스: 분노의 도로", "Mad Max: Fury Road", 2015, ["action", "survival", "kinetic", "visual", "rebellion"], "거의 순수한 운동감으로 질주하는 액션"),
+      movie("어바웃 타임", "About Time", 2013, ["romance", "family", "time", "warm", "bittersweet"], "시간 여행을 일상의 사랑으로 돌려놓는 영화"),
+      movie("노트북", "The Notebook", 2004, ["romance", "memory", "classic", "emotional", "devotion"], "오래 지속되는 사랑의 감정을 정면으로 다루는 멜로"),
+      movie("월-E", "WALL-E", 2008, ["animation", "loneliness", "future", "warm", "visual"], "말보다 몸짓으로 외로움과 희망을 전하는 애니메이션"),
+      movie("소울", "Soul", 2020, ["animation", "music", "life", "philosophical", "warm"], "삶의 의미를 재즈처럼 가볍고 깊게 묻는 애니메이션"),
+      movie("타인의 삶", "The Lives of Others", 2006, ["drama", "political", "quiet", "moral", "melancholy"], "감시와 양심 사이에서 인간성을 발견하는 드라마"),
+      movie("쇼생크 탈출", "The Shawshank Redemption", 1994, ["drama", "hope", "friendship", "classic", "resilience"], "오랜 시간의 절망 속에서 희망을 지키는 영화"),
+      movie("대부", "The Godfather", 1972, ["crime", "family", "classic", "power", "tragic"], "가족과 권력의 언어를 장중하게 그린 범죄 서사"),
+      movie("펄프 픽션", "Pulp Fiction", 1994, ["crime", "stylish", "dialogue", "nonlinear", "dark"], "대화와 구조의 리듬으로 장르를 비트는 영화"),
+      movie("센과 치히로의 행방불명", "Spirited Away", 2001, ["animation", "fantasy", "coming-of-age", "wonder", "visual"], "낯선 세계를 지나며 성장하는 환상 모험"),
+      movie("너의 이름은.", "Your Name", 2016, ["animation", "romance", "time", "fate", "emotional"], "시간과 인연을 청량한 이미지로 엮은 애니메이션"),
+      movie("중경삼림", "Chungking Express", 1994, ["romance", "loneliness", "city", "stylish", "melancholy"], "도시의 외로움과 우연을 감각적으로 붙잡는 영화"),
+      movie("화양연화", "In the Mood for Love", 2000, ["romance", "restraint", "melancholy", "stylish", "quiet"], "말하지 못한 마음을 색과 리듬으로 남기는 영화"),
+      movie("다크 나이트", "The Dark Knight", 2008, ["crime", "action", "moral", "dark", "power"], "영웅 서사를 범죄와 윤리의 딜레마로 확장한 영화"),
+      movie("파이트 클럽", "Fight Club", 1999, ["mind", "identity", "dark", "satire", "nonlinear"], "불안한 자아와 소비사회의 균열을 공격적으로 파고드는 영화"),
+      movie("포레스트 검프", "Forrest Gump", 1994, ["drama", "life", "hope", "warm", "classic"], "한 사람의 삶을 통해 시대와 순수를 함께 비추는 영화"),
+      movie("트루먼 쇼", "The Truman Show", 1998, ["satire", "identity", "media", "hope", "philosophical"], "가짜 세계를 깨닫는 순간의 자유를 다루는 우화"),
+      movie("블레이드 러너 2049", "Blade Runner 2049", 2017, ["sci-fi", "future", "identity", "visual", "melancholy"], "미래의 풍경 속에서 인간성의 조건을 묻는 SF"),
+      movie("블레이드 러너", "Blade Runner", 1982, ["sci-fi", "future", "identity", "noir", "visual"], "느와르와 SF가 만난 고독한 미래 도시"),
+      movie("매트릭스", "The Matrix", 1999, ["sci-fi", "action", "mind", "philosophical", "rebellion"], "현실의 감각을 액션과 철학으로 뒤집은 영화"),
+      movie("반지의 제왕: 반지원정대", "The Lord of the Rings: The Fellowship of the Ring", 2001, ["fantasy", "friendship", "journey", "grand", "hope"], "긴 여정과 동료애를 웅장하게 펼치는 판타지"),
+      movie("해리 포터와 마법사의 돌", "Harry Potter and the Sorcerer's Stone", 2001, ["fantasy", "coming-of-age", "wonder", "friendship", "warm"], "마법 세계의 경이와 성장의 첫 장을 여는 영화"),
+      movie("타이타닉", "Titanic", 1997, ["romance", "tragic", "grand", "classic", "emotional"], "거대한 재난 속 사랑의 기억을 남기는 멜로"),
+      movie("로마", "Roma", 2018, ["drama", "family", "memory", "quiet", "visual"], "개인의 기억과 사회의 시간을 고요하게 겹치는 영화"),
+      movie("노매드랜드", "Nomadland", 2020, ["drama", "loneliness", "journey", "quiet", "resilience"], "길 위의 삶에서 상실과 자유를 함께 보는 영화"),
+      movie("보이후드", "Boyhood", 2014, ["coming-of-age", "family", "time", "quiet", "life"], "시간의 실제 흐름으로 성장의 결을 기록한 영화"),
+      movie("위플래쉬", "Whiplash", 2014, ["music", "obsession", "power", "kinetic", "dark"], "재능과 집착의 경계를 드럼처럼 몰아치는 영화"),
+      movie("블랙 스완", "Black Swan", 2010, ["mind", "obsession", "dark", "horror", "visual"], "완벽을 향한 욕망이 균열되는 심리극"),
+      movie("조커", "Joker", 2019, ["crime", "identity", "dark", "social", "tragic"], "소외와 분노가 인물의 비극으로 변하는 영화"),
+      movie("겟 아웃", "Get Out", 2017, ["horror", "satire", "social", "thriller", "precise"], "공포 장르로 인종과 위선을 날카롭게 찌르는 영화"),
+      movie("미드소마", "Midsommar", 2019, ["horror", "grief", "visual", "ritual", "dark"], "밝은 대낮의 공포로 상실과 관계를 해부하는 영화"),
+      movie("에브리씽 에브리웨어 올 앳 원스", "Everything Everywhere All at Once", 2022, ["sci-fi", "family", "chaos", "comedy", "emotional"], "멀티버스의 혼란 속에서 가족의 마음을 붙잡는 영화"),
+      movie("바빌론", "Babylon", 2022, ["cinema", "dream", "chaos", "stylish", "tragic"], "영화 산업의 광기와 황홀을 과잉의 에너지로 그리는 영화"),
+      movie("탑건: 매버릭", "Top Gun: Maverick", 2022, ["action", "flight", "classic", "kinetic", "emotional"], "고전적 액션의 쾌감과 세대의 감정을 함께 살린 영화"),
+      movie("스파이더맨: 뉴 유니버스", "Spider-Man: Into the Spider-Verse", 2018, ["animation", "action", "coming-of-age", "visual", "hope"], "만화적 상상력과 성장 서사를 폭발시키는 애니메이션"),
+      movie("업", "Up", 2009, ["animation", "grief", "adventure", "warm", "hope"], "상실 이후의 모험을 따뜻하게 띄워 올리는 애니메이션"),
+      movie("토이 스토리 3", "Toy Story 3", 2010, ["animation", "friendship", "time", "bittersweet", "warm"], "이별과 성장을 장난감의 시선으로 그린 영화"),
+      movie("코코", "Coco", 2017, ["animation", "family", "music", "memory", "warm"], "음악과 기억으로 가족의 의미를 되살리는 영화"),
+      movie("모노노케 히메", "Princess Mononoke", 1997, ["animation", "fantasy", "nature", "moral", "grand"], "인간과 자연의 충돌을 장엄하게 묻는 애니메이션"),
+      movie("하울의 움직이는 성", "Howl's Moving Castle", 2004, ["animation", "fantasy", "romance", "wonder", "warm"], "마법과 사랑, 전쟁의 그림자를 함께 품은 판타지"),
+      movie("소셜 네트워크", "The Social Network", 2010, ["drama", "ambition", "dialogue", "precise", "loneliness"], "성공의 속도와 관계의 붕괴를 날카롭게 편집한 영화"),
+      movie("머니볼", "Moneyball", 2011, ["drama", "strategy", "sports", "resilience", "precise"], "숫자와 믿음으로 게임의 방식을 바꾸는 영화"),
+      movie("1917", "1917", 2019, ["war", "survival", "kinetic", "visual", "hope"], "하나의 동선으로 전장의 긴장과 절박함을 따라가는 영화"),
+      movie("덩케르크", "Dunkirk", 2017, ["war", "survival", "time", "kinetic", "quiet"], "시간의 압박으로 전쟁의 공포를 체험하게 하는 영화"),
+      movie("그래비티", "Gravity", 2013, ["sci-fi", "space", "survival", "visual", "resilience"], "우주 공간의 고립을 생존의 감각으로 밀어붙이는 영화"),
+      movie("레버넌트: 죽음에서 돌아온 자", "The Revenant", 2015, ["survival", "revenge", "nature", "visual", "dark"], "혹독한 자연과 복수심을 육체적으로 체험시키는 영화"),
+      movie("살인의 추억", "Memories of Murder", 2003, ["crime", "mystery", "social", "dark", "tragic"], "미해결의 불안과 시대의 공기를 함께 남기는 범죄극"),
+      movie("마더", "Mother", 2009, ["mystery", "family", "dark", "moral", "precise"], "모성의 절박함과 진실의 어둠을 파고드는 영화"),
+      movie("버닝", "Burning", 2018, ["mystery", "class", "quiet", "ambiguity", "melancholy"], "보이지 않는 분노와 계급의 공기를 천천히 태우는 영화"),
+      movie("곡성", "The Wailing", 2016, ["horror", "mystery", "faith", "dark", "ambiguous"], "믿음과 의심이 뒤엉킨 민속 공포"),
+      movie("아가씨", "The Handmaiden", 2016, ["romance", "mystery", "stylish", "power", "twist"], "욕망과 속임수를 화려한 미장센으로 뒤집는 영화"),
+      movie("엽기적인 그녀", "My Sassy Girl", 2001, ["romance", "comedy", "youth", "bittersweet", "warm"], "유쾌함과 애틋함이 섞인 한국 로맨틱 코미디"),
+      movie("8월의 크리스마스", "Christmas in August", 1998, ["romance", "quiet", "melancholy", "restraint", "life"], "담담해서 더 깊게 남는 사랑과 죽음의 이야기"),
+      movie("봄날은 간다", "One Fine Spring Day", 2001, ["romance", "melancholy", "quiet", "breakup", "realistic"], "사랑이 변하는 순간을 조용하고 현실적으로 붙잡는 영화"),
+      movie("클래식", "The Classic", 2003, ["romance", "memory", "fate", "emotional", "classic"], "첫사랑과 세대의 기억을 서정적으로 잇는 멜로"),
+      movie("리틀 미스 선샤인", "Little Miss Sunshine", 2006, ["family", "comedy", "journey", "warm", "resilience"], "삐걱대는 가족의 여정을 유쾌하게 품는 영화"),
+      movie("500일의 썸머", "500 Days of Summer", 2009, ["romance", "breakup", "nonlinear", "bittersweet", "city"], "사랑의 환상과 현실을 비선형으로 해부하는 영화"),
+      movie("이터널스", "Eternals", 2021, ["superhero", "family", "grand", "myth", "visual"], "신화적 스케일로 영웅의 존재 이유를 묻는 영화"),
+      movie("듄", "Dune", 2021, ["sci-fi", "political", "destiny", "grand", "visual"], "사막의 신화와 권력의 서사를 거대한 이미지로 펼치는 영화")
+    ];
+
+    const curatedRecommendationPool = [
+      movie("애프터 양", "After Yang", 2021, ["sci-fi", "family", "memory", "quiet", "melancholy"], "조용한 SF 안에서 기억과 가족의 빈자리를 바라봅니다."),
+      movie("어라이벌", "Arrival", 2016, ["sci-fi", "language", "time", "philosophical", "emotional"], "시간과 소통의 감각을 우아하게 뒤집습니다."),
+      movie("문라이트", "Moonlight", 2016, ["drama", "identity", "quiet", "intimate", "melancholy"], "한 사람의 성장과 고독을 절제된 빛으로 따라갑니다."),
+      movie("브루클린", "Brooklyn", 2015, ["romance", "coming-of-age", "warm", "identity", "bittersweet"], "새 삶을 선택하는 마음의 흔들림이 부드럽게 남습니다."),
+      movie("팬텀 스레드", "Phantom Thread", 2017, ["romance", "power", "stylish", "dark", "precise"], "사랑과 통제의 미묘한 힘겨루기를 세공합니다."),
+      movie("드라이브 마이 카", "Drive My Car", 2021, ["drama", "grief", "quiet", "dialogue", "healing"], "상실 이후에도 계속되는 대화의 힘을 믿는 영화입니다."),
+      movie("파고", "Fargo", 1996, ["crime", "dark", "satire", "precise", "quiet"], "차가운 유머와 범죄의 부조리를 균형 있게 굴립니다."),
+      movie("나이브스 아웃", "Knives Out", 2019, ["mystery", "satire", "puzzle", "dialogue", "stylish"], "추리의 재미와 계급 풍자를 경쾌하게 섞습니다."),
+      movie("칠드런 오브 맨", "Children of Men", 2006, ["sci-fi", "survival", "political", "kinetic", "hope"], "절망적인 세계에서도 희망의 동선을 놓치지 않습니다."),
+      movie("로건", "Logan", 2017, ["action", "family", "grief", "survival", "tragic"], "액션의 껍질 안에 늙음과 보호 본능을 담습니다."),
+      movie("프란시스 하", "Frances Ha", 2012, ["comedy", "friendship", "city", "coming-of-age", "bittersweet"], "어른이 되는 속도를 가볍고도 짠하게 포착합니다."),
+      movie("레이디 버드", "Lady Bird", 2017, ["coming-of-age", "family", "comedy", "warm", "identity"], "가족과 자기 자신에게서 독립하는 시기를 산뜻하게 그립니다."),
+      movie("아멜리에", "Amelie", 2001, ["romance", "whimsy", "city", "warm", "visual"], "작은 친절과 상상력이 도시를 다르게 보이게 합니다."),
+      movie("원스", "Once", 2007, ["music", "romance", "quiet", "bittersweet", "intimate"], "큰 사건 없이도 음악과 마음이 오래 남습니다."),
+      movie("플로리다 프로젝트", "The Florida Project", 2017, ["drama", "childhood", "warm", "social", "bittersweet"], "밝은 색감 아래 놓인 삶의 불안을 섬세하게 봅니다."),
+      movie("미나리", "Minari", 2020, ["family", "immigrant", "warm", "quiet", "resilience"], "가족의 균열과 버팀을 낮은 온도로 품습니다."),
+      movie("그랜드 부다페스트 호텔", "The Grand Budapest Hotel", 2014, ["comedy", "stylish", "visual", "friendship", "melancholy"], "정교한 화면 안에 사라지는 시대의 향수를 넣습니다."),
+      movie("스포트라이트", "Spotlight", 2015, ["drama", "journalism", "moral", "precise", "quiet"], "차분한 절차가 진실에 닿는 힘을 보여줍니다."),
+      movie("컨택트", "Contact", 1997, ["sci-fi", "space", "faith", "philosophical", "hope"], "우주를 향한 질문을 믿음과 과학 사이에 둡니다."),
+      movie("메멘토", "Memento", 2000, ["mind", "puzzle", "thriller", "nonlinear", "dark"], "기억의 결핍을 서사의 엔진으로 바꿉니다."),
+      movie("헤어질 결심", "Decision to Leave", 2022, ["romance", "mystery", "restraint", "stylish", "melancholy"], "수사와 사랑이 같은 속도로 안개 속에 잠깁니다."),
+      movie("벌새", "House of Hummingbird", 2018, ["coming-of-age", "quiet", "family", "melancholy", "intimate"], "작은 일상의 균열로 한 시절의 마음을 잡아냅니다."),
+      movie("괴물", "The Host", 2006, ["monster", "family", "satire", "action", "political"], "괴수 장르를 가족극과 사회 풍자로 확장합니다."),
+      movie("박쥐", "Thirst", 2009, ["dark", "romance", "horror", "moral", "stylish"], "욕망과 죄책감을 기이한 로맨스로 밀어붙입니다."),
+      movie("리틀 포레스트", "Little Forest", 2018, ["healing", "food", "quiet", "warm", "resilience"], "도망친 시간이 회복의 리듬이 되는 영화입니다."),
+      movie("패터슨", "Paterson", 2016, ["poetry", "quiet", "routine", "warm", "intimate"], "반복되는 일상 안의 작은 시적 순간을 발견합니다."),
+      movie("비포 선라이즈", "Before Sunrise", 1995, ["romance", "dialogue", "city", "intimate", "bittersweet"], "하룻밤의 대화가 오래가는 감정으로 변합니다."),
+      movie("캐롤", "Carol", 2015, ["romance", "restraint", "stylish", "melancholy", "identity"], "절제된 시선으로 금지된 마음의 밀도를 높입니다."),
+      movie("조조 래빗", "Jojo Rabbit", 2019, ["satire", "war", "coming-of-age", "warm", "dark"], "우스움과 슬픔 사이에서 편견이 무너지는 순간을 봅니다."),
+      movie("엑스 마키나", "Ex Machina", 2014, ["sci-fi", "mind", "thriller", "future", "precise"], "인공지능과 욕망의 권력 관계를 냉정하게 설계합니다."),
+      movie("퍼스트 리폼드", "First Reformed", 2017, ["drama", "faith", "moral", "quiet", "dark"], "신념과 절망의 균열을 차갑고 깊게 바라봅니다."),
+      movie("콜럼버스", "Columbus", 2017, ["drama", "architecture", "quiet", "intimate", "healing"], "공간과 대화가 마음의 회복을 천천히 이끕니다."),
+      movie("타오르는 여인의 초상", "Portrait of a Lady on Fire", 2019, ["romance", "restraint", "visual", "melancholy", "identity"], "시선과 침묵으로 사랑의 밀도를 높입니다."),
+      movie("애프터썬", "Aftersun", 2022, ["memory", "family", "melancholy", "quiet", "grief"], "기억 속 아버지와 딸의 시간을 아프게 되짚습니다."),
+      movie("클로즈", "Close", 2022, ["friendship", "coming-of-age", "grief", "intimate", "melancholy"], "어린 우정의 균열을 섬세하게 따라갑니다."),
+      movie("최악의 인간", "The Worst Person in the World", 2021, ["romance", "identity", "city", "bittersweet", "coming-of-age"], "서른 즈음의 선택과 흔들림을 가볍고 날카롭게 봅니다."),
+      movie("어나더 라운드", "Another Round", 2020, ["drama", "friendship", "life", "bittersweet", "comedy"], "무기력한 삶에 대한 실험을 웃음과 씁쓸함으로 밀어갑니다."),
+      movie("더 페이버릿: 여왕의 여자", "The Favourite", 2018, ["power", "satire", "dark", "stylish", "comedy"], "권력과 욕망을 독한 유머로 뒤집습니다."),
+      movie("언컷 젬스", "Uncut Gems", 2019, ["crime", "anxiety", "kinetic", "dark", "obsession"], "불안과 욕망을 쉬지 않고 몰아치는 범죄극입니다."),
+      movie("굿타임", "Good Time", 2017, ["crime", "kinetic", "dark", "brotherhood", "city"], "하룻밤의 도주를 거칠고 강렬한 에너지로 밀어붙입니다."),
+      movie("더 랍스터", "The Lobster", 2015, ["romance", "satire", "surreal", "dark", "philosophical"], "연애와 사회 규범을 기묘한 우화로 비틉니다."),
+      movie("킬링 디어", "The Killing of a Sacred Deer", 2017, ["thriller", "moral", "surreal", "dark", "precise"], "죄책감과 처벌을 불편한 리듬으로 조율합니다."),
+      movie("문라이즈 킹덤", "Moonrise Kingdom", 2012, ["romance", "coming-of-age", "whimsy", "visual", "warm"], "어린 사랑과 모험을 정교하고 사랑스럽게 담습니다."),
+      movie("로열 테넌바움", "The Royal Tenenbaums", 2001, ["family", "comedy", "melancholy", "stylish", "healing"], "이상한 가족의 상처와 화해를 독특한 결로 그립니다."),
+      movie("싱 스트리트", "Sing Street", 2016, ["music", "youth", "romance", "dream", "warm"], "음악으로 도망치고 성장하는 청춘의 에너지가 좋습니다."),
+      movie("빌리 엘리어트", "Billy Elliot", 2000, ["coming-of-age", "dance", "family", "hope", "resilience"], "춤을 통해 자기 삶을 선택하는 힘을 보여줍니다."),
+      movie("카모메 식당", "Kamome Diner", 2006, ["food", "quiet", "healing", "warm", "routine"], "낯선 도시의 작은 식당에서 마음이 천천히 풀립니다."),
+      movie("남매의 여름밤", "Moving On", 2019, ["family", "childhood", "quiet", "memory", "warm"], "여름의 집과 가족의 시간을 담백하게 남깁니다."),
+      movie("윤희에게", "Moonlit Winter", 2019, ["romance", "memory", "quiet", "melancholy", "healing"], "오래 묻어둔 마음을 겨울 풍경 속에서 조심스럽게 꺼냅니다."),
+      movie("찬실이는 복도 많지", "Lucky Chan-sil", 2019, ["comedy", "cinema", "life", "warm", "healing"], "영화와 삶 사이에서 다시 살아갈 힘을 찾습니다."),
+      movie("메기", "Maggie", 2018, ["comedy", "surreal", "social", "youth", "quirky"], "엉뚱한 상상력으로 불신과 관계를 가볍게 찌릅니다."),
+      movie("우리들", "The World of Us", 2016, ["childhood", "friendship", "quiet", "social", "intimate"], "아이들의 관계를 어른보다 더 예민하게 들여다봅니다."),
+      movie("환상의 빛", "Maborosi", 1995, ["grief", "quiet", "melancholy", "visual", "life"], "상실 이후에도 남는 삶의 빛을 고요히 바라봅니다."),
+      movie("아무도 모른다", "Nobody Knows", 2004, ["childhood", "family", "quiet", "social", "tragic"], "방치된 아이들의 시간을 차분하지만 아프게 따라갑니다."),
+      movie("걸어도 걸어도", "Still Walking", 2008, ["family", "memory", "quiet", "bittersweet", "life"], "가족 식탁의 말과 침묵으로 상처를 비춥니다."),
+      movie("그렇게 아버지가 된다", "Like Father, Like Son", 2013, ["family", "moral", "quiet", "emotional", "life"], "부모와 아이의 관계를 혈연 너머로 묻습니다."),
+      movie("하나 그리고 둘", "Yi Yi", 2000, ["family", "life", "city", "quiet", "philosophical"], "한 가족의 일상으로 삶 전체의 결을 보여줍니다."),
+      movie("고령가 소년 살인사건", "A Brighter Summer Day", 1991, ["coming-of-age", "crime", "social", "tragic", "grand"], "청춘과 시대의 폭력을 거대한 서사로 담습니다."),
+      movie("밀양", "Secret Sunshine", 2007, ["grief", "faith", "moral", "dark", "emotional"], "상실과 용서의 불가능성을 깊게 파고듭니다."),
+      movie("시", "Poetry", 2010, ["poetry", "moral", "quiet", "grief", "life"], "아름다움과 죄의식을 함께 바라보는 영화입니다."),
+      movie("오아시스", "Oasis", 2002, ["romance", "social", "dark", "intimate", "moral"], "불편한 사랑을 통해 사회의 시선을 되묻습니다."),
+      movie("파수꾼", "Bleak Night", 2010, ["friendship", "youth", "dark", "grief", "social"], "남학생들의 우정과 폭력, 상처를 날카롭게 남깁니다."),
+      movie("한공주", "Han Gong-ju", 2013, ["trauma", "social", "quiet", "dark", "resilience"], "폭력 이후의 시간을 조심스럽고 단단하게 따라갑니다."),
+      movie("서치", "Searching", 2018, ["mystery", "family", "technology", "thriller", "puzzle"], "화면 인터페이스만으로 실종 미스터리를 촘촘히 풀어갑니다."),
+      movie("런", "Run", 2020, ["thriller", "family", "survival", "dark", "kinetic"], "닫힌 공간과 관계의 공포를 빠르게 조입니다."),
+      movie("바바둑", "The Babadook", 2014, ["horror", "grief", "family", "dark", "psychological"], "괴물을 상실과 우울의 형상으로 읽게 합니다."),
+      movie("팔로우", "It Follows", 2014, ["horror", "youth", "surreal", "dark", "stylish"], "불안의 감각을 느린 추격의 공포로 만듭니다."),
+      movie("콰이어트 플레이스", "A Quiet Place", 2018, ["horror", "family", "survival", "quiet", "kinetic"], "침묵이라는 규칙으로 가족 생존극의 긴장을 세웁니다."),
+      movie("더 위치", "The Witch", 2015, ["horror", "faith", "family", "dark", "period"], "믿음과 억압의 공포를 차갑게 쌓아갑니다."),
+      movie("미션 임파서블: 폴아웃", "Mission: Impossible - Fallout", 2018, ["action", "kinetic", "spy", "classic", "survival"], "현대 액션의 속도와 물리적 쾌감을 깔끔하게 보여줍니다."),
+      movie("존 윅", "John Wick", 2014, ["action", "revenge", "stylish", "kinetic", "noir"], "단순한 복수극을 리듬과 세계관으로 밀어붙입니다."),
+      movie("베이비 드라이버", "Baby Driver", 2017, ["action", "music", "crime", "kinetic", "stylish"], "음악과 추격을 한 박자로 묶은 액션입니다."),
+      movie("엣지 오브 투모로우", "Edge of Tomorrow", 2014, ["sci-fi", "action", "time", "survival", "comedy"], "반복되는 시간을 액션 게임처럼 경쾌하게 활용합니다."),
+      movie("마션", "The Martian", 2015, ["sci-fi", "space", "survival", "hope", "comedy"], "과학과 낙관으로 고립을 돌파하는 생존 SF입니다."),
+      movie("문", "Moon", 2009, ["sci-fi", "identity", "loneliness", "quiet", "philosophical"], "고립된 우주 공간에서 정체성의 질문을 던집니다."),
+      movie("가타카", "Gattaca", 1997, ["sci-fi", "identity", "future", "hope", "moral"], "운명처럼 주어진 조건을 넘어서는 인간의 의지를 봅니다."),
+      movie("이터널 선샤인 이후의 연인들", "Comet", 2014, ["romance", "memory", "nonlinear", "bittersweet", "stylish"], "관계의 기억을 조각난 시간으로 다시 맞춥니다."),
+      movie("라스베가스를 떠나며", "Leaving Las Vegas", 1995, ["romance", "tragic", "dark", "intimate", "melancholy"], "파국적인 사랑을 정면으로 바라보는 영화입니다."),
+      movie("러브레터", "Love Letter", 1995, ["romance", "memory", "winter", "melancholy", "quiet"], "첫사랑의 기억을 눈 내리는 풍경처럼 남깁니다."),
+      movie("조제, 호랑이 그리고 물고기들", "Josee, the Tiger and the Fish", 2003, ["romance", "youth", "bittersweet", "intimate", "realistic"], "사랑의 설렘과 한계를 섬세하게 남깁니다."),
+      movie("꽃다발 같은 사랑을 했다", "We Made a Beautiful Bouquet", 2021, ["romance", "breakup", "realistic", "bittersweet", "youth"], "닮은 취향으로 시작한 사랑이 변해가는 시간을 봅니다."),
+      movie("드라이브", "Drive", 2011, ["crime", "city", "stylish", "quiet", "dark"], "침묵과 폭발의 대비로 도시적 로맨스를 만듭니다."),
+      movie("나이트크롤러", "Nightcrawler", 2014, ["crime", "media", "dark", "satire", "obsession"], "성공 욕망과 미디어 윤리를 차갑게 파고듭니다."),
+      movie("프리즈너스", "Prisoners", 2013, ["thriller", "family", "moral", "dark", "mystery"], "절박한 부모의 선택을 어둡고 집요하게 묻습니다."),
+      movie("시카리오: 암살자의 도시", "Sicario", 2015, ["crime", "political", "dark", "precise", "thriller"], "국경과 폭력의 시스템을 서늘하게 보여줍니다."),
+      movie("인사이드 르윈", "Inside Llewyn Davis", 2013, ["music", "melancholy", "city", "quiet", "failure"], "성공하지 못한 음악가의 겨울을 씁쓸하게 걷습니다."),
+      movie("아티스트", "The Artist", 2011, ["cinema", "romance", "classic", "stylish", "bittersweet"], "무성영화의 형식으로 영화에 대한 사랑을 전합니다."),
+      movie("휴고", "Hugo", 2011, ["cinema", "wonder", "family", "visual", "warm"], "영화의 탄생과 어린 모험을 아름답게 잇습니다."),
+      movie("노스탤지어", "Cinema Paradiso", 1988, ["cinema", "memory", "coming-of-age", "warm", "melancholy"], "영화관과 첫사랑의 기억을 오래 남깁니다.")
+    ];
+
+    const RECENT_YEAR_CUTOFF = 2010;
+    const RECENT_TO_OLD_RATIO = 10;
+    const recommendationPool = mergeMoviePools(curatedRecommendationPool, window.MOVIE_DATASET || []);
+    const displayRecommendationPool = createEraBalancedDisplayPool(recommendationPool.filter(hasKoreanDisplayTitle));
+    const searchableMovies = mergeMoviePools(knownMovies, recommendationPool);
+    document.querySelector("#datasetCount").textContent = `${displayRecommendationPool.length.toLocaleString("ko-KR")}개`;
+
+    const tagKorean = {
+      action: "액션", adventure: "모험", ambiguity: "모호함", ambiguous: "모호함", ambition: "야망", animation: "애니메이션",
+      anxiety: "불안", architecture: "공간감", bittersweet: "쓸쓸한 여운", breakup: "이별", brotherhood: "형제애",
+      chaos: "혼돈", childhood: "유년기", cinema: "영화적 낭만", city: "도시감성", class: "계급", classic: "클래식",
+      comedy: "코미디", "coming-of-age": "성장", crime: "범죄", dance: "춤", dark: "어두운 긴장", destiny: "운명",
+      devotion: "헌신", dialogue: "대화", documentary: "다큐멘터리", dream: "꿈", emotional: "감정선", failure: "실패", faith: "믿음",
+      family: "가족", fantasy: "판타지", fate: "운명", flight: "비행", food: "음식", friendship: "우정",
+      future: "미래", grand: "거대한 스케일", grief: "상실", healing: "회복", hope: "희망", horror: "호러",
+      identity: "정체성", immigrant: "이민", intimate: "내밀함", journalism: "저널리즘", journey: "여정",
+      kinetic: "속도감", language: "언어", life: "삶의 의미", loneliness: "외로움", media: "미디어", memory: "기억",
+      mind: "심리", monster: "괴수", moral: "윤리", music: "음악", myth: "신화", mystery: "미스터리",
+      nature: "자연", noir: "느와르", nonlinear: "비선형 서사", obsession: "집착", period: "시대극",
+      philosophical: "철학적 질문", poetry: "시적 일상", political: "사회성", power: "권력", precise: "정교함",
+      psychological: "심리 공포", puzzle: "퍼즐", quirky: "엉뚱함", quiet: "고요함", realistic: "현실감",
+      rebellion: "저항", resilience: "버팀", restraint: "절제", revenge: "복수", ritual: "의식", romance: "로맨스",
+      routine: "루틴", satire: "풍자", "sci-fi": "SF", social: "사회적 시선", space: "우주", sports: "스포츠",
+      spy: "스파이", strategy: "전략", stylish: "스타일", superhero: "슈퍼히어로", surreal: "초현실",
+      survival: "생존", technology: "기술", thriller: "스릴러", time: "시간", tragic: "비극", trauma: "트라우마",
+      twist: "반전", visual: "강한 이미지", warm: "따뜻함", war: "전쟁", whimsy: "기발함", winter: "겨울",
+      western: "서부극", wonder: "경이", youth: "청춘"
+    };
+
+    const fallbackSignals = [
+      ["사랑 연애 로맨스 멜로 이별 첫사랑", ["romance", "bittersweet", "intimate"]],
+      ["우주 sf 시간 미래 과학 인공지능 ai", ["sci-fi", "time", "philosophical"]],
+      ["범죄 복수 스릴러 추리 미스터리 느와르", ["crime", "thriller", "dark"]],
+      ["가족 성장 엄마 아빠 청춘 우정", ["family", "coming-of-age", "warm"]],
+      ["음악 뮤지컬 재즈 밴드 노래", ["music", "dream", "emotional"]],
+      ["애니 만화 픽사 지브리", ["animation", "wonder", "warm"]],
+      ["액션 전쟁 생존 질주 히어로", ["action", "survival", "kinetic"]],
+      ["공포 호러 귀신 괴담 악마", ["horror", "dark", "thriller"]],
+      ["예술 영화 감독 시네마 영화관", ["cinema", "stylish", "memory"]],
+      ["스포츠 야구 농구 축구 경기", ["sports", "strategy", "resilience"]]
+    ];
+
+    const posterPalettes = [
+      "linear-gradient(135deg, #16222a, #7b2d26)",
+      "linear-gradient(135deg, #214e52, #d1a14a)",
+      "linear-gradient(135deg, #31243f, #c85f4f)",
+      "linear-gradient(135deg, #25384d, #6a8b66)",
+      "linear-gradient(135deg, #3d2c24, #b67e48)",
+      "linear-gradient(135deg, #26272b, #466c91)"
+    ];
+
+    const LEARNING_STORAGE_KEY = "movieRecommenderLearning:v1";
+    let currentSet = 0;
+    let latestRecommendations = [];
+    let displayedRecommendations = [];
+    let latestProfile = null;
+    let learningState = loadLearningState();
+    let autocompleteMovies = [];
+
+    const form = document.querySelector("#movieForm");
+    const rerollButton = document.querySelector("#rerollButton");
+    const resultTitle = document.querySelector("#resultTitle");
+    const setCount = document.querySelector("#setCount");
+    const tasteBox = document.querySelector("#tasteBox");
+    const recommendations = document.querySelector("#recommendations");
+
+    setupAutocomplete();
+
+    form.addEventListener("submit", (event) => {
+      event.preventDefault();
+      currentSet = 0;
+      latestProfile = buildTasteProfile(getInputs());
+      latestRecommendations = rankRecommendations(latestProfile);
+      displayedRecommendations = getCurrentSetRecommendations();
+      render();
+    });
+
+    rerollButton.addEventListener("click", () => {
+      if (currentSet < 2) {
+        currentSet += 1;
+        displayedRecommendations = getCurrentSetRecommendations();
+        render();
+      }
+    });
+
+    function movie(title, englishTitle, year, tags, note) {
+      return { title, englishTitle, year, tags, note };
+    }
+
+    function mergeMoviePools(...pools) {
+      const seen = new Set();
+      const merged = [];
+      pools.flat().forEach((movieItem) => {
+        const key = `${normalizeTitle(movieItem.englishTitle || movieItem.title)}-${movieItem.year || ""}`;
+        if (!seen.has(key)) {
+          seen.add(key);
+          merged.push(movieItem);
+        }
+      });
+      return merged;
+    }
+
+    function hasKoreanDisplayTitle(movieItem) {
+      return Boolean(movieItem.title && movieItem.englishTitle && movieItem.title !== movieItem.englishTitle);
+    }
+
+    function movieKey(movieItem) {
+      return `${normalizeTitle(movieItem.englishTitle || movieItem.title)}-${movieItem.year || ""}`;
+    }
+
+    function setupAutocomplete() {
+      autocompleteMovies = mergeMoviePools(knownMovies, displayRecommendationPool, recommendationPool)
+        .filter((movieItem) => movieItem.title && movieItem.year);
+      ["movieOne", "movieTwo", "movieThree"].forEach((inputId) => {
+        const input = document.querySelector(`#${inputId}`);
+        const suggestions = document.querySelector(`#${inputId}Suggestions`);
+        let activeIndex = -1;
+        let currentMatches = [];
+
+        input.addEventListener("input", () => {
+          currentMatches = findAutocompleteMatches(input.value);
+          activeIndex = -1;
+          renderSuggestions(suggestions, currentMatches, activeIndex);
+        });
+
+        input.addEventListener("focus", () => {
+          currentMatches = findAutocompleteMatches(input.value);
+          renderSuggestions(suggestions, currentMatches, activeIndex);
+        });
+
+        input.addEventListener("keydown", (event) => {
+          if (!suggestions.classList.contains("open")) return;
+          if (event.key === "ArrowDown") {
+            event.preventDefault();
+            activeIndex = Math.min(activeIndex + 1, currentMatches.length - 1);
+            renderSuggestions(suggestions, currentMatches, activeIndex);
+          }
+          if (event.key === "ArrowUp") {
+            event.preventDefault();
+            activeIndex = Math.max(activeIndex - 1, 0);
+            renderSuggestions(suggestions, currentMatches, activeIndex);
+          }
+          if (event.key === "Enter" && activeIndex >= 0) {
+            event.preventDefault();
+            selectSuggestion(input, suggestions, currentMatches[activeIndex]);
+          }
+          if (event.key === "Escape") {
+            closeSuggestions(suggestions);
+          }
+        });
+
+        suggestions.addEventListener("mousedown", (event) => {
+          const button = event.target.closest("[data-suggestion-index]");
+          if (!button) return;
+          event.preventDefault();
+          selectSuggestion(input, suggestions, currentMatches[Number(button.dataset.suggestionIndex)]);
+        });
+
+        document.addEventListener("click", (event) => {
+          if (!input.parentElement.contains(event.target)) {
+            closeSuggestions(suggestions);
+          }
+        });
+      });
+    }
+
+    function findAutocompleteMatches(value) {
+      const query = normalizeTitle(value);
+      if (query.length < 1) return [];
+      return autocompleteMovies
+        .map((movieItem) => {
+          const title = normalizeTitle(movieItem.title);
+          const englishTitle = normalizeTitle(movieItem.englishTitle || "");
+          const starts = title.startsWith(query) || englishTitle.startsWith(query);
+          const includes = title.includes(query) || englishTitle.includes(query);
+          if (!includes) return null;
+          const score = (starts ? 3 : 1) + (isRecentMovie(movieItem) ? 0.5 : 0);
+          return { movieItem, score };
+        })
+        .filter(Boolean)
+        .sort((a, b) => b.score - a.score || Number(b.movieItem.year) - Number(a.movieItem.year))
+        .slice(0, 8)
+        .map((item) => item.movieItem);
+    }
+
+    function renderSuggestions(container, matches, activeIndex) {
+      if (!matches.length) {
+        closeSuggestions(container);
+        return;
+      }
+      container.innerHTML = matches.map((movieItem, index) => `
+        <button class="suggestion-item ${index === activeIndex ? "active" : ""}" type="button" data-suggestion-index="${index}">
+          <strong>${movieItem.title}</strong>
+          <span>${renderSuggestionMeta(movieItem)}</span>
+        </button>
+      `).join("");
+      container.classList.add("open");
+    }
+
+    function renderSuggestionMeta(movieItem) {
+      const english = movieItem.englishTitle && movieItem.englishTitle !== movieItem.title ? `${movieItem.englishTitle} · ` : "";
+      return `${english}${movieItem.year}`;
+    }
+
+    function selectSuggestion(input, suggestions, movieItem) {
+      if (!movieItem) return;
+      input.value = movieItem.title;
+      closeSuggestions(suggestions);
+    }
+
+    function closeSuggestions(container) {
+      container.classList.remove("open");
+      container.innerHTML = "";
+    }
+
+    function loadLearningState() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(LEARNING_STORAGE_KEY) || "{}");
+        return {
+          movies: saved.movies || {},
+          tags: saved.tags || {},
+          seen: saved.seen || {},
+          votes: saved.votes || {}
+        };
+      } catch (error) {
+        return { movies: {}, tags: {}, seen: {}, votes: {} };
+      }
+    }
+
+    function saveLearningState() {
+      localStorage.setItem(LEARNING_STORAGE_KEY, JSON.stringify(learningState));
+    }
+
+    function createEraBalancedDisplayPool(pool) {
+      const recent = pool.filter(isRecentMovie);
+      const old = pool.filter((movieItem) => !isRecentMovie(movieItem));
+      const oldLimit = Math.floor(recent.length / RECENT_TO_OLD_RATIO);
+      return [...recent, ...old.slice(0, oldLimit)];
+    }
+
+    function getInputs() {
+      return [
+        document.querySelector("#movieOne").value,
+        document.querySelector("#movieTwo").value,
+        document.querySelector("#movieThree").value
+      ].map((value) => value.trim()).filter(Boolean);
+    }
+
+    function normalizeTitle(value) {
+      return value.toLowerCase().replace(/[^0-9a-z가-힣]/g, "");
+    }
+
+    function buildTasteProfile(inputs) {
+      const seen = new Set(inputs.map(normalizeTitle));
+      const weights = {};
+      const matchedTitles = [];
+      const unmatchedInputs = [];
+
+      inputs.forEach((input) => {
+        const matched = findKnownMovie(input);
+        if (matched) {
+          matchedTitles.push(matched.title);
+          seen.add(normalizeTitle(matched.title));
+          seen.add(normalizeTitle(matched.englishTitle));
+          matched.tags.forEach((tag, index) => {
+            weights[tag] = (weights[tag] || 0) + 5 - Math.min(index, 3);
+          });
+        } else {
+          unmatchedInputs.push(input);
+          inferTagsFromText(input).forEach((tag) => {
+            weights[tag] = (weights[tag] || 0) + 2;
+          });
+        }
+      });
+
+      if (Object.keys(weights).length === 0) {
+        ["romance", "drama", "quiet", "bittersweet", "stylish"].forEach((tag) => {
+          weights[tag] = 1;
+        });
+      }
+
+      const topTags = Object.entries(weights)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 5)
+        .map(([tag]) => tag);
+
+      return { weights, topTags, matchedTitles, unmatchedInputs, seen };
+    }
+
+    function findKnownMovie(input) {
+      const normalizedInput = normalizeTitle(input);
+      return searchableMovies.find((candidate) => {
+        const ko = normalizeTitle(candidate.title);
+        const en = normalizeTitle(candidate.englishTitle);
+        return ko === normalizedInput || en === normalizedInput || ko.includes(normalizedInput) || en.includes(normalizedInput);
+      });
+    }
+
+    function inferTagsFromText(input) {
+      const normalized = normalizeTitle(input);
+      const tags = [];
+      fallbackSignals.forEach(([words, signalTags]) => {
+        if (words.split(" ").some((word) => normalized.includes(normalizeTitle(word)))) {
+          tags.push(...signalTags);
+        }
+      });
+      return tags;
+    }
+
+    function rankRecommendations(profile) {
+      const ranked = displayRecommendationPool
+        .filter((candidate) => !profile.seen.has(normalizeTitle(candidate.title)) && !profile.seen.has(normalizeTitle(candidate.englishTitle)))
+        .filter((candidate) => !learningState.seen[movieKey(candidate)])
+        .map((candidate) => {
+          const score = candidate.tags.reduce((total, tag) => total + (profile.weights[tag] || 0), 0);
+          const varietyBonus = candidate.tags.some((tag) => !profile.topTags.includes(tag)) ? 0.8 : 0;
+          const recentBonus = isRecentMovie(candidate) ? 3 : 0;
+          const learnedMovieScore = learningState.movies[movieKey(candidate)] || 0;
+          const learnedTagScore = candidate.tags.reduce((total, tag) => total + (learningState.tags[tag] || 0), 0);
+          return { ...candidate, score: score + varietyBonus + recentBonus + learnedMovieScore + learnedTagScore };
+        })
+        .sort((a, b) => b.score - a.score || a.year - b.year);
+      const maxScore = Math.max(...ranked.map((movieItem) => movieItem.score), 1);
+      return arrangeByEraRatio(ranked.map((movieItem) => ({
+        ...movieItem,
+        similarity: Math.max(1, Math.min(100, Math.round((movieItem.score / maxScore) * 100)))
+      })));
+    }
+
+    function isRecentMovie(movieItem) {
+      return Number(movieItem.year) >= RECENT_YEAR_CUTOFF;
+    }
+
+    function arrangeByEraRatio(ranked) {
+      const recent = ranked.filter(isRecentMovie);
+      const old = ranked.filter((movieItem) => !isRecentMovie(movieItem));
+      const arranged = [];
+      let postIndex = 0;
+      let preIndex = 0;
+
+      while (postIndex < recent.length || preIndex < old.length) {
+        for (let i = 0; i < RECENT_TO_OLD_RATIO && postIndex < recent.length; i += 1) {
+          arranged.push(recent[postIndex]);
+          postIndex += 1;
+        }
+        if (preIndex < old.length) {
+          arranged.push(old[preIndex]);
+          preIndex += 1;
+        }
+      }
+
+      return arranged;
+    }
+
+    function getCurrentSetRecommendations() {
+      return latestRecommendations.slice(currentSet * 3, currentSet * 3 + 3);
+    }
+
+    function refreshRanking() {
+      if (!latestProfile) return;
+      latestRecommendations = rankRecommendations(latestProfile);
+      displayedRecommendations = displayedRecommendations
+        .filter((movieItem) => !learningState.seen[movieKey(movieItem)])
+        .map((movieItem) => latestRecommendations.find((candidate) => movieKey(candidate) === movieKey(movieItem)) || movieItem);
+    }
+
+    function findReplacement(excludeIndex = -1) {
+      const blocked = new Set(displayedRecommendations.map(movieKey));
+      if (excludeIndex >= 0 && displayedRecommendations[excludeIndex]) {
+        blocked.delete(movieKey(displayedRecommendations[excludeIndex]));
+      }
+      return latestRecommendations.find((movieItem) => !blocked.has(movieKey(movieItem)) && !learningState.seen[movieKey(movieItem)]);
+    }
+
+    function replaceSeenMovie(index) {
+      const current = displayedRecommendations[index];
+      if (!current) return;
+      learningState.seen[movieKey(current)] = true;
+      saveLearningState();
+      latestRecommendations = rankRecommendations(latestProfile);
+      const blocked = new Set(displayedRecommendations
+        .filter((_, itemIndex) => itemIndex !== index)
+        .map(movieKey));
+      const replacement = latestRecommendations.find((movieItem) => !blocked.has(movieKey(movieItem)));
+      if (replacement) {
+        displayedRecommendations[index] = replacement;
+      } else {
+        displayedRecommendations.splice(index, 1);
+      }
+      render();
+    }
+
+    function rateMovie(index, direction) {
+      const movieItem = displayedRecommendations[index];
+      if (!movieItem) return;
+      const key = movieKey(movieItem);
+      const previous = learningState.votes[key] || 0;
+      const next = direction === "up" ? 1 : -1;
+      const delta = next - previous;
+      learningState.votes[key] = next;
+      learningState.movies[key] = (learningState.movies[key] || 0) + delta * 2.5;
+      movieItem.tags.forEach((tag) => {
+        learningState.tags[tag] = (learningState.tags[tag] || 0) + delta * 0.8;
+      });
+      saveLearningState();
+      refreshRanking();
+      render();
+    }
+
+    function render() {
+      const start = currentSet * 3;
+      resultTitle.textContent = `${currentSet + 1}번째 추천 세트`;
+      setCount.textContent = `남은 다른 추천 ${2 - currentSet}회`;
+      rerollButton.disabled = currentSet >= 2 || latestRecommendations.length <= start + 3;
+      renderTaste();
+      renderCards(displayedRecommendations);
+    }
+
+    function renderTaste() {
+      const tags = latestProfile.topTags.map((tag) => tagKorean[tag] || tag);
+      const matched = latestProfile.matchedTitles.length ? `${latestProfile.matchedTitles.join(", ")}에서` : "입력한 세 편에서";
+      const unknown = latestProfile.unmatchedInputs.length ? ` 일부 제목은 데이터셋에 없어 단어 분위기만 참고했습니다.` : "";
+      const learned = Object.keys(learningState.votes).length ? ` 지금까지의 붐업/붐다운 평가도 추천 점수에 반영하고 있습니다.` : "";
+      tasteBox.innerHTML = `
+        <strong>취향 해석</strong>
+        <p>${matched} ${tags.slice(0, 3).join(", ")}의 신호가 강하게 잡혔습니다. 익숙한 장르보다 인물의 감정선과 여운을 따라가는 선택에 더 잘 반응하는 취향으로 보여요.${unknown}${learned}</p>
+        <div class="chips" aria-label="취향 태그">${tags.map((tag) => `<span class="chip">${tag}</span>`).join("")}</div>
+      `;
+    }
+
+    function renderCards(selected) {
+      recommendations.innerHTML = selected.map((movieItem, index) => {
+        const palette = posterPalettes[(currentSet * 3 + index) % posterPalettes.length];
+        const vote = learningState.votes[movieKey(movieItem)] || 0;
+        const similarity = movieItem.similarity || 1;
+        const matchingTags = movieItem.tags
+          .filter((tag) => latestProfile.topTags.includes(tag))
+          .slice(0, 3)
+          .map((tag) => tagKorean[tag] || tag);
+        const reason = matchingTags.length
+          ? `${matchingTags.join(", ")} 취향과 맞닿아 있습니다. ${movieItem.note}`
+          : movieItem.note;
+
+        return `
+          <article class="movie-card">
+            <div class="poster" style="--poster-bg: ${palette}">
+              <span>${movieItem.year}</span>
+              <b>${movieItem.title}</b>
+            </div>
+            <div class="movie-body">
+              <div>
+                <div class="movie-title">${movieItem.title}</div>
+                <div class="meta">${renderMeta(movieItem)}</div>
+              </div>
+              <div class="score-row">
+                <span>유사도 ${similarity}점</span>
+                <span class="score-meter" aria-hidden="true"><span class="score-fill" style="--score-width: ${similarity}%"></span></span>
+              </div>
+              <p class="reason">${reason}</p>
+              <div class="chips">${movieItem.tags.slice(0, 4).map((tag) => `<span class="chip">${tagKorean[tag] || tag}</span>`).join("")}</div>
+              <div class="card-actions">
+                <button class="card-action ${vote === 1 ? "active" : ""}" type="button" data-rate="up" data-index="${index}" aria-label="붐업" title="붐업">👍</button>
+                <button class="card-action ${vote === -1 ? "active" : ""}" type="button" data-rate="down" data-index="${index}" aria-label="붐다운" title="붐다운">👎</button>
+                <button class="card-action seen" type="button" data-seen data-index="${index}">이미 봤어요</button>
+              </div>
+            </div>
+          </article>
+        `;
+      }).join("");
+      recommendations.querySelectorAll("[data-seen]").forEach((button) => {
+        button.addEventListener("click", () => replaceSeenMovie(Number(button.dataset.index)));
+      });
+      recommendations.querySelectorAll("[data-rate]").forEach((button) => {
+        button.addEventListener("click", () => rateMovie(Number(button.dataset.index), button.dataset.rate));
+      });
+    }
+
+    function renderMeta(movieItem) {
+      return `${movieItem.year}`;
+    }
+  </script>
+</body>
+</html>
