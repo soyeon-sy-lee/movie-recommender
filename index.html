@@ -9,16 +9,14 @@
       color-scheme: light;
       --ink: #172026;
       --muted: #65717b;
-      --page: #f5efe7;
+      --page: #f5f1e9;
       --panel: #fffdf8;
       --panel-soft: #eee4d8;
       --line: #ddd2c5;
       --accent: #b9413b;
-      --accent-deep: #7e2f3b;
+      --accent-deep: #a63b34;
       --accent-ink: #fff8ed;
-      --mint: #24766c;
-      --violet: #51456f;
-      --amber: #c38b30;
+      --hero: #3d3432;
       --shadow: 0 18px 52px rgba(61, 41, 31, 0.14);
     }
 
@@ -28,10 +26,7 @@
       margin: 0;
       min-height: 100vh;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Apple SD Gothic Neo", sans-serif;
-      background:
-        linear-gradient(90deg, rgba(23, 32, 38, 0.04) 1px, transparent 1px),
-        var(--page);
-      background-size: 28px 28px;
+      background: var(--page);
       color: var(--ink);
       line-height: 1.55;
     }
@@ -49,7 +44,7 @@
     .shell {
       min-height: 100vh;
       display: grid;
-      grid-template-columns: minmax(320px, 430px) minmax(0, 1fr);
+      grid-template-columns: minmax(320px, 372px) minmax(0, 1fr);
     }
 
     .control-panel {
@@ -180,9 +175,14 @@
 
     .actions {
       display: grid;
-      grid-template-columns: 1fr auto;
+      grid-template-columns: 1fr;
       gap: 10px;
       margin-top: 4px;
+    }
+
+    .actions.has-results {
+      grid-template-columns: 1fr auto;
+      align-items: center;
     }
 
     .primary,
@@ -208,6 +208,10 @@
       color: #453a31;
     }
 
+    .secondary.is-hidden {
+      display: none;
+    }
+
     .secondary:disabled {
       opacity: 0.48;
       cursor: not-allowed;
@@ -215,31 +219,31 @@
 
     .helper {
       margin-top: 18px;
-      padding: 13px 14px;
-      border: 1px solid #eadbb8;
-      border-radius: 8px;
-      background: #fff7df;
-      color: #5d4a1b;
+      color: #645a4d;
       font-size: 13px;
+    }
+
+    .helper strong {
+      color: #3f372f;
     }
 
     .workspace {
       padding: 34px;
       display: grid;
-      gap: 22px;
+      gap: 20px;
       align-content: start;
     }
 
     .cinema-strip {
-      min-height: 196px;
+      min-height: 176px;
       border: 1px solid var(--line);
-      border-radius: 8px;
+      border-radius: 14px;
       background:
-        linear-gradient(90deg, rgba(255, 255, 255, 0.18) 8px, transparent 8px 34px, rgba(255, 255, 255, 0.18) 34px 42px),
-        linear-gradient(135deg, #1f272e, #5f3e3b 48%, #ba8545);
+        linear-gradient(90deg, rgba(255, 255, 255, 0.09) 8px, transparent 8px 34px, rgba(255, 255, 255, 0.09) 34px 42px),
+        linear-gradient(135deg, #262625, var(--hero) 58%, #8f5440);
       background-size: 42px 100%, 100% 100%;
       color: #fff8e9;
-      padding: 28px;
+      padding: 30px 32px;
       display: grid;
       align-content: end;
       overflow: hidden;
@@ -264,10 +268,10 @@
     }
 
     .cinema-strip h2 {
-      max-width: 780px;
+      max-width: 800px;
       position: relative;
-      font-size: clamp(28px, 5vw, 58px);
-      line-height: 1.03;
+      font-size: clamp(40px, 4vw, 56px);
+      line-height: 1.06;
       font-weight: 900;
     }
 
@@ -297,17 +301,27 @@
     }
 
     .set-count {
-      color: var(--muted);
-      font-size: 14px;
+      border: 1px solid #e2d8ca;
+      border-radius: 999px;
+      background: rgba(255, 253, 248, 0.74);
+      color: #6d6257;
+      padding: 6px 10px;
+      font-size: 13px;
+      font-weight: 800;
       white-space: nowrap;
     }
 
     .taste-box {
-      border-left: 5px solid var(--mint);
+      display: none;
+      border-left: 4px solid var(--accent);
       background: rgba(255, 253, 248, 0.88);
       padding: 17px 18px;
       border-radius: 0 8px 8px 0;
       box-shadow: 0 8px 28px rgba(63, 44, 33, 0.07);
+    }
+
+    .taste-box.is-visible {
+      display: block;
     }
 
     .taste-box strong {
@@ -407,7 +421,7 @@
       align-items: center;
       justify-content: space-between;
       gap: 10px;
-      color: var(--mint);
+      color: var(--accent);
       font-size: 13px;
       font-weight: 900;
     }
@@ -424,7 +438,7 @@
       display: block;
       width: var(--score-width);
       height: 100%;
-      background: linear-gradient(90deg, var(--mint), var(--amber));
+      background: linear-gradient(90deg, var(--accent), #8b5144);
     }
 
     .reason {
@@ -477,11 +491,23 @@
     }
 
     .empty {
+      min-height: 280px;
+      display: grid;
+      place-items: center;
       border: 1px dashed #c7bbaa;
-      border-radius: 8px;
+      border-radius: 14px;
       padding: 32px;
       color: var(--muted);
+      text-align: center;
       background: rgba(255, 253, 248, 0.64);
+    }
+
+    .empty strong {
+      display: block;
+      margin-bottom: 6px;
+      color: var(--ink);
+      font-size: 22px;
+      line-height: 1.25;
     }
 
     @media (max-width: 1040px) {
@@ -519,8 +545,12 @@
       }
 
       .cinema-strip {
-        min-height: 230px;
+        min-height: 176px;
         padding: 22px;
+      }
+
+      .cinema-strip h2 {
+        font-size: 36px;
       }
 
       .card-actions {
@@ -563,30 +593,30 @@
           </span>
         </label>
 
-        <div class="actions">
+        <div class="actions" id="actions">
           <button class="primary" type="submit">추천 받기</button>
-          <button class="secondary" id="rerollButton" type="button" disabled>다른 추천</button>
+          <button class="secondary is-hidden" id="rerollButton" type="button" disabled>다른 추천 보기</button>
         </div>
       </form>
 
       <p class="helper">
-        국내외 유명작과 MovieLens 공개 데이터셋을 함께 사용합니다.
-        현재 추천 후보는 <strong id="datasetCount">9,000개 이상</strong>입니다.
+        ⓘ MovieLens 공개 데이터셋을 활용합니다.<br>
+        현재 추천 후보 <strong id="datasetCount">9,000개 이상</strong>
       </p>
     </aside>
 
     <main class="workspace">
       <section class="cinema-strip" aria-label="서비스 소개">
-        <h2>좋아한 영화 세 편이면, 취향의 윤곽은 꽤 선명해집니다.</h2>
+        <h2>좋아한 영화 세 편이면, 취향의 윤곽이 선명해집니다.</h2>
         <p>장르보다 더 깊은 단서인 정서, 리듬, 결말의 온도, 인물의 고독을 함께 봅니다.</p>
       </section>
 
       <section class="result-head">
         <div>
-          <p class="eyebrow">RECOMMENDATION</p>
-          <h2 class="result-title" id="resultTitle">아직 추천 전입니다</h2>
+          <p class="eyebrow">추천 결과</p>
+          <h2 class="result-title" id="resultTitle">세 편의 영화를 입력해 주세요</h2>
         </div>
-        <p class="set-count" id="setCount">총 3세트까지 확인 가능</p>
+        <p class="set-count" id="setCount">최대 3세트</p>
       </section>
 
       <section class="taste-box" id="tasteBox">
@@ -595,7 +625,12 @@
       </section>
 
       <section class="recommendations" id="recommendations">
-        <div class="empty">추천 결과가 이곳에 나타납니다.</div>
+        <div class="empty">
+          <div>
+            <strong>세 편의 영화를 입력해 주세요</strong>
+            <p>입력이 끝나면 취향 분석과 추천 영화를 보여드립니다.</p>
+          </div>
+        </div>
       </section>
     </main>
   </div>
@@ -823,6 +858,7 @@
     let autocompleteMovies = [];
 
     const form = document.querySelector("#movieForm");
+    const actions = document.querySelector("#actions");
     const rerollButton = document.querySelector("#rerollButton");
     const resultTitle = document.querySelector("#resultTitle");
     const setCount = document.querySelector("#setCount");
@@ -1175,7 +1211,9 @@
     function render() {
       const start = currentSet * 3;
       resultTitle.textContent = `${currentSet + 1}번째 추천 세트`;
-      setCount.textContent = `남은 다른 추천 ${2 - currentSet}회`;
+      setCount.textContent = `${currentSet + 1} / 3`;
+      actions.classList.add("has-results");
+      rerollButton.classList.remove("is-hidden");
       rerollButton.disabled = currentSet >= 2 || latestRecommendations.length <= start + 3;
       renderTaste();
       renderCards(displayedRecommendations);
@@ -1186,8 +1224,9 @@
       const matched = latestProfile.matchedTitles.length ? `${latestProfile.matchedTitles.join(", ")}에서` : "입력한 세 편에서";
       const unknown = latestProfile.unmatchedInputs.length ? ` 일부 제목은 데이터셋에 없어 단어 분위기만 참고했습니다.` : "";
       const learned = Object.keys(learningState.votes).length ? ` 지금까지의 붐업/붐다운 평가도 추천 점수에 반영하고 있습니다.` : "";
+      tasteBox.classList.add("is-visible");
       tasteBox.innerHTML = `
-        <strong>취향 해석</strong>
+        <strong>당신의 영화 취향</strong>
         <p>${matched} ${tags.slice(0, 3).join(", ")}의 신호가 강하게 잡혔습니다. 익숙한 장르보다 인물의 감정선과 여운을 따라가는 선택에 더 잘 반응하는 취향으로 보여요.${unknown}${learned}</p>
         <div class="chips" aria-label="취향 태그">${tags.map((tag) => `<span class="chip">${tag}</span>`).join("")}</div>
       `;
