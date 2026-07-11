@@ -2,6 +2,10 @@
 
 인생영화 3편을 입력하면 취향 태그 기반으로 영화 3편을 추천하는 정적 웹앱입니다.
 
+## Live Demo
+
+https://soyeon-sy-lee.github.io/movie-recommender/
+
 ## Features
 
 - 영화 제목 자동완성
