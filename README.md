@@ -15,6 +15,3 @@ https://soyeon-sy-lee.github.io/movie-recommender/
 - 👍 / 👎 피드백 기반 로컬 재학습
 - 2010년 이후 영화 중심 추천 후보 다운샘플링
 
-## Run locally
-
-브라우저에서 `index.html`을 직접 열면 됩니다.
