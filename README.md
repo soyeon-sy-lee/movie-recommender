@@ -57,27 +57,4 @@ python3 build_dataset.py
   - `build_dataset.py`의 RECENT_YEAR_CUTOFF (기본값 2010)와 TARGET_RECENT_RATIO (기본값 10)은 추천 후보의 연도 균형을 조정합니다.
   - `movies_dataset.js` 내 `LEARNING_STORAGE_KEY`는 로컬 학습 키 이름입니다.
 
-## 개발자 노트 / 유지보수
-
-- 경로 유연성
-  - 현재 `build_dataset.py`는 기본적으로 `/private/tmp/ml-latest-small.zip` 경로를 사용합니다. 환경에 따라 CLI 인자나 환경변수로 입력 파일 경로를 받도록 개선하는 것을 권장합니다.
-
-- 생성 파일 취급
-  - `movies_dataset.js`와 `wikidata_ko_labels_cache.json`은 생성 파일입니다. 저장소에 큰 데이터 파일을 커밋하면 리포지토리 크기가 급증하므로, 가능하면 다음 중 하나를 권장합니다:
-    - .gitignore에 추가하고 CI(예: GitHub Actions)에서 배포 시 생성
-    - 생성 파일을 분할하거나 압축하여 저장
-
-- CI/배포 권장 사항
-  - GitHub Pages에 정적 파일을 배포 중이므로, `movies_dataset.js`를 CI 파이프라인에서 생성하고 결과만 배포하는 흐름으로 바꾸면 협업과 PR 유지 관리가 쉬워집니다.
-
-- 캐시 및 외부 호출
-  - Wikidata 조회 결과는 `wikidata_ko_labels_cache.json`에 저장됩니다. 캐시 파일을 재사용하면 API 호출 횟수를 줄이고 재현성을 높일 수 있습니다.
-
-- 코드 개선 제안
-  - `build_dataset.py`를 CLI 인자(또는 환경변수)로 입력/출력 경로와 제한(예: fetch limit)을 받도록 리팩터링하면 재현성과 테스트가 쉬워집니다.
-  - 현재 태그 매핑(USER_TAG_MAP, GENRE_TAGS 등)은 코드 상수로 정의되어 있으므로 별도 구성 파일(예: YAML/JSON)로 분리하면 확장성이 좋아집니다.
-
-- 로컬 학습/프라이버시
-  - 사용자의 피드백(👍/👎)은 로컬에만 저장됩니다(localStorage). 외부 전송은 하지 않으므로 개인 정보 유출 우려는 없습니다.
-
 
