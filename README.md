@@ -37,7 +37,7 @@ python3 build_dataset.py
 
 데이터 출처 및 라이선스
 
-- MovieLens (ml-latest-small): https://grouplens.org/datasets/movielens/ (원본 데이터셋의 이용 약관을 확인하세요)
+- MovieLens (ml-latest-small): https://grouplens.org/datasets/movielens/
 - Wikidata (한국어 라벨 조회): https://www.wikidata.org/
 
 참고: 원본 데이터의 라이선스/이용약관은 각 출처에 따릅니다. 코드(애플리케이션) 자체와 데이터의 라이선스는 별도로 검토해야 합니다.
